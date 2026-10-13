@@ -26,7 +26,7 @@ jobs:
       matrix:
         include:
           - line: '26.7'
-            maven-args: ''
+            maven-args: '-Dkeycloak.image=quay.io/keycloak/keycloak:nightly'
           - line: '26.6'
             maven-args: '-Pkeycloak-26.6'
     name: build (Keycloak ${{ matrix.line }})

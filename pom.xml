@@ -18,8 +18,9 @@
 		<dasniko.spi.bom.version>26.7.0</dasniko.spi.bom.version>
 		<!-- Source root holding the Keycloak-line specific ActionTokenRevocation implementation. -->
 		<keycloak.line.dir>src/main/java-kc26.7</keycloak.line.dir>
-		<!-- Keycloak image the integration tests run against. -->
-		<keycloak.image>quay.io/keycloak/keycloak:nightly</keycloak.image>
+		<!-- Keycloak image the integration tests run against. Defaults to the line being built so builds are
+				 reproducible; CI passes nightly explicitly for the 26.7 line to catch upstream breakage early. -->
+		<keycloak.image>quay.io/keycloak/keycloak:${keycloak.version}</keycloak.image>
 		<!-- Pinned explicitly: the 26.6.x BOMs still manage the pre-2.0 testcontainers artifacts. -->
 		<testcontainers.version>2.0.5</testcontainers.version>
 		<testcontainers-keycloak.version>4.3.0</testcontainers-keycloak.version>

@@ -119,9 +119,9 @@ the one line-specific piece of code (`src/main/java-kc26.7` and `src/main/java-k
 `keycloak.line.dir` property); everything else is shared. Because neither revocation call exists on the
 other line, no single jar can be loaded by both lines.
 
-The integration tests run against a real Keycloak image, which can be pinned/overridden with
-`-Dkeycloak.image=quay.io/keycloak/keycloak:<version>` (the `keycloak-26.6` profile pins it to 26.6.4,
-the default build uses `nightly`).
+The integration tests run against a real Keycloak image, selected by `keycloak.image` and defaulting to the
+line being built (`-Dkeycloak.image=quay.io/keycloak/keycloak:<version>` to override; the `keycloak-26.6`
+profile uses 26.6.4, the newest image of that line, while compiling against the 26.6.2 boms).
 
 To try it locally, `docker compose up` starts Keycloak with the jar mounted, fronted by an nginx
 container that performs the path rewrite described above. It expects `keycloak.localhost` and

@@ -33,8 +33,8 @@ rather than a synchronous cookie swap.
 # Run a single test
 ./mvnw test -Dtest=ImpersonationFlowTest#redemptionIsSingleUse
 
-# Run the tests against a specific Keycloak image
-./mvnw test -Dkeycloak.image=quay.io/keycloak/keycloak:26.7.0
+# Run the tests against a specific Keycloak image (default: the line being built)
+./mvnw test -Dkeycloak.image=quay.io/keycloak/keycloak:nightly
 
 # Run a local Keycloak with the built jar mounted, behind nginx for hostname-based admin routing
 docker compose up
