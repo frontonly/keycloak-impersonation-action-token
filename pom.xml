@@ -10,7 +10,20 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- Keycloak line this build compiles against. The keycloak-26.6 profile lowers it. -->
 		<keycloak.version>26.7.0</keycloak.version>
+		<!-- Version of the dasniko keycloak-spi-bom, which aligns third-party dependencies (testcontainers,
+				 rest-assured, junit, ...) and the org.keycloak artifacts. Kept separate from keycloak.version
+				 because that bom is not released for every SPI patch release. -->
+		<dasniko.spi.bom.version>26.7.0</dasniko.spi.bom.version>
+		<!-- Source root holding the Keycloak-line specific ActionTokenRevocation implementation. -->
+		<keycloak.line.dir>src/main/java-kc26.7</keycloak.line.dir>
+		<!-- Keycloak image the integration tests run against. -->
+		<keycloak.image>quay.io/keycloak/keycloak:nightly</keycloak.image>
+		<!-- Pinned explicitly: the 26.6.x BOMs still manage the pre-2.0 testcontainers artifacts. -->
+		<testcontainers.version>2.0.5</testcontainers.version>
+		<testcontainers-keycloak.version>4.3.0</testcontainers-keycloak.version>
+		<build-helper.version>3.6.2</build-helper.version>
 		<maven.compiler.version>3.15.0</maven.compiler.version>
 		<maven.compiler.release>21</maven.compiler.release>
 		<maven-shade.version>3.6.2</maven-shade.version>
@@ -19,10 +32,26 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- Declared before the imported BOM so these win over its (line dependent) entries. -->
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers</artifactId>
+				<version>${testcontainers.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-junit-jupiter</artifactId>
+				<version>${testcontainers.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.dasniko</groupId>
+				<artifactId>testcontainers-keycloak</artifactId>
+				<version>${testcontainers-keycloak.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>com.github.dasniko</groupId>
 				<artifactId>keycloak-spi-bom</artifactId>
-				<version>${keycloak.version}</version>
+				<version>${dasniko.spi.bom.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -81,6 +110,27 @@
 
 	<build>
 		<finalName>${project.groupId}-${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>${build-helper.version}</version>
+				<executions>
+					<execution>
+						<id>add-keycloak-line-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${keycloak.line.dir}</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 		<pluginManagement>
 			<plugins>
 				<plugin>
@@ -119,6 +169,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire.version}</version>
+					<configuration>
+						<systemPropertyVariables>
+							<keycloak.image>${keycloak.image}</keycloak.image>
+						</systemPropertyVariables>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>io.github.git-commit-id</groupId>
@@ -148,6 +203,27 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+
+	<profiles>
+		<!--
+			Builds the jar for Keycloak 26.6.x. The 26.6 line has no RevokedTokenProvider, so the
+			ActionTokenRevocation implementation living in src/main/java-kc26.6 is compiled instead of the
+			26.7 one. The dasniko SPI bom 26.6.2 is the newest 26.6.x bom; org.keycloak artifacts therefore
+			resolve to 26.6.2 while the tests run against the newest 26.6.x server image.
+		-->
+		<profile>
+			<id>keycloak-26.6</id>
+			<properties>
+				<keycloak.version>26.6.2</keycloak.version>
+				<dasniko.spi.bom.version>26.6.2</dasniko.spi.bom.version>
+				<keycloak.line.dir>src/main/java-kc26.6</keycloak.line.dir>
+				<keycloak.image>quay.io/keycloak/keycloak:26.6.4</keycloak.image>
+			</properties>
+			<build>
+				<finalName>${project.groupId}-${project.artifactId}-26.6</finalName>
+			</build>
+		</profile>
+	</profiles>
 
 	<repositories>
 		<repository>

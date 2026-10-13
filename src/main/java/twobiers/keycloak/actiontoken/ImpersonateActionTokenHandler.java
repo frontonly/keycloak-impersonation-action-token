@@ -145,7 +145,7 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
 		if (actionTokenKey == null) {
 			return false;
 		}
-		long lifespanSeconds = Math.max(1L, actionTokenKey.getExp() - Time.currentTimeSeconds() + skewSeconds);
-		return session.revokedTokens().put(actionTokenKeyToInvalidate, lifespanSeconds);
+		long lifespanSeconds = Math.max(1L, actionTokenKey.getExp() - Time.currentTime() + skewSeconds);
+		return ActionTokenRevocation.revoke(session, actionTokenKeyToInvalidate, lifespanSeconds);
 	}
 }

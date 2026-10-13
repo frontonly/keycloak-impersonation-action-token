@@ -21,6 +21,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - line: '26.7'
+            maven-args: ''
+          - line: '26.6'
+            maven-args: '-Pkeycloak-26.6'
+    name: build (Keycloak ${{ matrix.line }})
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -40,12 +49,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Maven build
-        run: ./mvnw -B -U -T 1C clean install
+        run: ./mvnw -B -U -T 1C clean install ${{ matrix.maven-args }}
       - name: Upload build artifacts
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: maven-logs
+          name: maven-logs-${{ matrix.line }}
           path: |
             target/surefire-reports/
             target/*.log

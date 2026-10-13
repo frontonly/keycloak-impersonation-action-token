@@ -95,13 +95,33 @@ http-request set-path %[path,regsub(^/admin/realms/([^/]+)/users/([^/]+)/imperso
 ## Installation
 
 ```sh
-# Build the SPI jar
+# Build the SPI jar for Keycloak 26.7.x and newer
 ./mvnw clean package
+
+# ... or for Keycloak 26.6.x
+./mvnw clean package -Pkeycloak-26.6
 ```
 
-This produces `target/twobiers.keycloak-impersonation-action-token.jar`. Drop it into your Keycloak
-instance's `providers/` directory (typically `/opt/keycloak/providers/`) and restart, or rebuild the
-Keycloak container image with it included.
+| Build                 | Jar                                                                     | Keycloak            |
+|-----------------------|-------------------------------------------------------------------------|---------------------|
+| default               | `target/twobiers.keycloak-keycloak-impersonation-action-token.jar`      | 26.7.x and newer    |
+| `-Pkeycloak-26.6`     | `target/twobiers.keycloak-keycloak-impersonation-action-token-26.6.jar` | 26.6.x              |
+
+Drop the jar matching your Keycloak version into the instance's `providers/` directory (typically
+`/opt/keycloak/providers/`) and restart, or rebuild the Keycloak container image with it included.
+
+Two jars are required because Keycloak 26.7 replaced the single-use-object `.revoked` convention with the
+dedicated `RevokedTokenProvider` (`KeycloakSession#revokedTokens()`, added in 26.7) and
+`LoginActionsServiceChecks#checkTokenWasNotUsedYet` now only consults the new store. 26.6 has no such
+provider, so it still revokes by inserting the serialized action token key plus `.revoked` into the
+single-use object store. Since neither revocation call exists on the other line, the revocation helper is
+the one line-specific piece of code (`src/main/java-kc26.7` and `src/main/java-kc26.6`, selected by the
+`keycloak.line.dir` property); everything else is shared. Because neither revocation call exists on the
+other line, no single jar can be loaded by both lines.
+
+The integration tests run against a real Keycloak image, which can be pinned/overridden with
+`-Dkeycloak.image=quay.io/keycloak/keycloak:<version>` (the `keycloak-26.6` profile pins it to 26.6.4,
+the default build uses `nightly`).
 
 To try it locally, `docker compose up` starts Keycloak with the jar mounted, fronted by an nginx
 container that performs the path rewrite described above. It expects `keycloak.localhost` and
